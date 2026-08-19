@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A.R.M.O.R — Personal AI Core</title>
+<script src="https://js.puter.com/v2/"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --bg:#050a0f;
+    --panel:#0a1620;
+    --cyan:#3fd8ff;
+    --cyan-dim:#1a5f73;
+    --amber:#ffb238;
+    --red:#ff4d5e;
+    --text:#cfe9f0;
+    --text-dim:#5f8a97;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  body{
+    background:radial-gradient(ellipse at 50% 20%, #0c1c26 0%, var(--bg) 65%);
+    color:var(--text);
+    font-family:'Rajdhani',sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    padding:20px;
+  }
+
+  .frame{
+    width:100%;
+    max-width:760px;
+    border:1px solid var(--cyan-dim);
+    border-radius:4px;
+    background:linear-gradient(180deg, rgba(63,216,255,0.04), transparent 20%);
+    position:relative;
+    padding:28px;
+  }
+
+  .frame::before, .frame::after{
+    content:'';
+    position:absolute;
+    width:14px;height:14px;
+    border:2px solid var(--cyan);
+    top:-2px;left:-2px;
+    border-right:none;border-bottom:none;
+  }
+  .frame::after{
+    left:auto;right:-2px;top:auto;bottom:-2px;
+    border-left:none;border-top:none;
+    border-right:2px solid var(--cyan);
+    border-bottom:2px solid var(--cyan);
+  }
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom:1px solid var(--cyan-dim);
+    padding-bottom:12px;
+    margin-bottom:24px;
+  }
+  .brand{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    letter-spacing:4px;
+    color:var(--cyan);
+  }
+  .brand span{color:var(--text-dim);}
+  #clock{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+
+  .core-wrap{
+    display:flex;
+    justify-content:center;
+    padding:30px 0 10px;
+  }
+
+  #core{
+    width:180px;height:180px;
+    position:relative;
+  }
+  #core svg{width:100%;height:100%;}
+  .ring{
+    fill:none;
+    stroke:var(--cyan-dim);
+    stroke-width:1.4;
+  }
+  .ring-active{
+    fill:none;
+    stroke:var(--cyan);
+    stroke-width:2.2;
+    stroke-linecap:round;
+    filter:drop-shadow(0 0 6px var(--cyan));
+    transform-origin:50% 50%;
+    animation:spin 6s linear infinite;
+  }
+  .ring-active.rev{animation-direction:reverse;animation-duration:9s;opacity:.6;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  #core-dot{
+    position:absolute;top:50%;left:50%;
+    width:34px;height:34px;
+    margin:-17px 0 0 -17px;
+    border-radius:50%;
+    background:radial-gradient(circle, var(--cyan) 0%, var(--cyan-dim) 70%);
+    box-shadow:0 0 20px 4px rgba(63,216,255,0.5);
+    transition:all .25s ease;
+  }
+  #core.listening #core-dot{
+    animation:pulse 1s ease-in-out infinite;
+    background:radial-gradient(circle, var(--amber) 0%, #7a5210 70%);
+    box-shadow:0 0 26px 6px rgba(255,178,56,0.6);
+  }
+  #core.speaking #core-dot{
+    animation:pulse .5s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.25);}}
+
+  #status{
+    text-align:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:3px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    margin-bottom:22px;
+    min-height:16px;
+  }
+  #status.live{color:var(--amber);}
+
+  #log{
+    height:180px;
+    overflow-y:auto;
+    border:1px solid var(--cyan-dim);
+    background:rgba(63,216,255,0.02);
+    padding:14px 16px;
+    font-size:16px;
+    line-height:1.5;
+    margin-bottom:20px;
+  }
+  #log::-webkit-scrollbar{width:5px;}
+  #log::-webkit-scrollbar-thumb{background:var(--cyan-dim);}
+
+  .line{margin-bottom:10px;}
+  .line .who{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:2px;
+    display:block;
+    margin-bottom:2px;
+  }
+  .line.user .who{color:var(--amber);}
+  .line.ai .who{color:var(--cyan);}
+  .line p{color:var(--text);}
+
+  .controls{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+
+  #mic-btn{
+    flex:0 0 auto;
+    width:56px;height:56px;
+    border-radius:50%;
+    border:1px solid var(--cyan);
+    background:transparent;
+    color:var(--cyan);
+    font-size:22px;
+    cursor:pointer;
+    transition:all .2s ease;
+  }
+  #mic-btn:hover{background:rgba(63,216,255,0.12);}
+  #mic-btn.on{
+    background:var(--amber);
+    border-color:var(--amber);
+    color:#1a1002;
+    box-shadow:0 0 18px rgba(255,178,56,0.5);
+  }
+
+  #text-input{
+    flex:1;
+    background:var(--panel);
+    border:1px solid var(--cyan-dim);
+    color:var(--text);
+    font-family:'Rajdhani',sans-serif;
+    font-size:16px;
+    padding:14px 16px;
+    outline:none;
+  }
+  #text-input:focus{border-color:var(--cyan);}
+
+  #send-btn{
+    flex:0 0 auto;
+    padding:0 20px;
+    height:56px;
+    background:var(--cyan);
+    border:none;
+    color:#04141a;
+    font-family:'Rajdhani',sans-serif;
+    font-weight:700;
+    letter-spacing:1px;
+    cursor:pointer;
+  }
+  #send-btn:hover{background:#6ee5ff;}
+
+  footer{
+    margin-top:16px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--text-dim);
+    text-align:center;
+    letter-spacing:1px;
+  }
+
+  .hint{
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:center;
+    margin-top:8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <header>
+    <div class="brand">A.R.M.O.R <span>// personal ai core</span></div>
+    <div id="clock">--:--:--</div>
+  </header>
+
+  <div class="core-wrap">
+    <div id="core">
+      <svg viewBox="0 0 200 200">
+        <circle class="ring" cx="100" cy="100" r="90"/>
+        <circle class="ring-active" cx="100" cy="100" r="76" stroke-dasharray="180 300"/>
+        <circle class="ring-active rev" cx="100" cy="100" r="60" stroke-dasharray="120 260"/>
+      </svg>
+      <div id="core-dot"></div>
+    </div>
+  </div>
+
+  <div id="status">core idle — awaiting command</div>
+
+  <div id="log">
+    <div class="line ai">
+      <span class="who">ARMOR</span>
+      <p>System online. Mic dabao ya neeche type karke bolo — main sun raha hoon.</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="mic-btn" title="Mic on/off">🎙</button>
+    <input id="text-input" type="text" placeholder="Type a command..." />
+    <button id="send-btn">SEND</button>
+  </div>
+  <div class="hint">Voice ke liye Chrome use karo (best support). Pehli baar mic permission maangega — Allow karna.</div>
+
+  <footer>FREE STACK — Web Speech API + Puter.js · No API key · No server</footer>
+</div>
+
+<script>
+// ---------- clock ----------
+function tickClock(){
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false});
+}
+setInterval(tickClock,1000); tickClock();
+
+// ---------- elements ----------
+const core = document.getElementById('core');
+const statusEl = document.getElementById('status');
+const log = document.getElementById('log');
+const micBtn = document.getElementById('mic-btn');
+const textInput = document.getElementById('text-input');
+const sendBtn = document.getElementById('send-btn');
+
+function addLine(who, text){
+  const div = document.createElement('div');
+  div.className = 'line ' + (who === 'ARMOR' ? 'ai' : 'user');
+  div.innerHTML = `<span class="who">${who}</span><p></p>`;
+  div.querySelector('p').textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function setStatus(text, live){
+  statusEl.textContent = text;
+  statusEl.classList.toggle('live', !!live);
+}
+
+// ---------- text-to-speech ----------
+function speak(text){
+  return new Promise((resolve)=>{
+    if(!('speechSynthesis' in window)){ resolve(); return; }
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1.02;
+    utter.pitch = 0.9;
+    const voices = speechSynthesis.getVoices();
+    const enVoice = voices.find(v => /en-IN|en-GB|en-US/.test(v.lang) && /Male|male/.test(v.name)) || voices.find(v => /en/.test(v.lang));
+    if(enVoice) utter.voice = enVoice;
+    core.classList.add('speaking');
+    setStatus('responding', true);
+    utter.onend = ()=>{
+      core.classList.remove('speaking');
+      setStatus('core idle — awaiting command');
+      resolve();
+    };
+    speechSynthesis.speak(utter);
+  });
+}
+
+// ---------- AI brain (Puter.js — free, no key) ----------
+async function askAI(prompt){
+  addLine('ARMOR', '…thinking…');
+  const thinkingLine = log.lastElementChild;
+  try{
+    const resp = await puter.ai.chat(
+      `You are ARMOR, a witty, concise JARVIS-style personal AI assistant. Reply in short, natural Hinglish (Hindi+English mix), max 2-3 sentences, helpful and a bit charming. User said: "${prompt}"`
+    );
+    const reply = (resp?.message?.content || resp?.toString?.() || String(resp)).trim();
+    thinkingLine.querySelector('p').textContent = reply;
+    return reply;
+  }catch(err){
+    const fallback = "Connection thoda weak lag raha hai, but main yahin hoon. Dobara try karo.";
+    thinkingLine.querySelector('p').textContent = fallback;
+    return fallback;
+  }
+}
+
+async function handleCommand(text){
+  if(!text.trim()) return;
+  addLine('YOU', text);
+  const reply = await askAI(text);
+  speak(reply);
+}
+
+// ---------- speech-to-text ----------
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognizer = null;
+let listening = false;
+
+if(SpeechRecognition){
+  recognizer = new SpeechRecognition();
+  recognizer.lang = 'en-IN';
+  recognizer.continuous = false;
+  recognizer.interimResults = false;
+
+  recognizer.onstart = ()=>{
+    listening = true;
+    core.classList.add('listening');
+    micBtn.classList.add('on');
+    setStatus('listening… speak now', true);
+  };
+  recognizer.onend = ()=>{
+    listening = false;
+    core.classList.remove('listening');
+    micBtn.classList.remove('on');
+    if(statusEl.textContent.includes('listening')) setStatus('core idle — awaiting command');
+  };
+  recognizer.onerror = ()=>{
+    listening = false;
+    core.classList.remove('listening');
+    micBtn.classList.remove('on');
+    setStatus('mic error — try again');
+  };
+  recognizer.onresult = (e)=>{
+    const transcript = e.results[0][0].transcript;
+    handleCommand(transcript);
+  };
+} else {
+  micBtn.disabled = true;
+  micBtn.title = 'Speech recognition not supported in this browser — use Chrome';
+}
+
+micBtn.addEventListener('click', ()=>{
+  if(!recognizer) return;
+  if(listening){ recognizer.stop(); }
+  else{ recognizer.start(); }
+});
+
+sendBtn.addEventListener('click', ()=>{
+  const val = textInput.value;
+  textInput.value = '';
+  handleCommand(val);
+});
+textInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ sendBtn.click(); }
+});
+</script>
+</body>
+</html>
